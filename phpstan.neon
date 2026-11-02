@@ -1,0 +1,12 @@
+parameters:
+    level: 8
+    phpVersion: 80200
+    paths:
+        - .
+    excludePaths:
+        - docs/*
+    scanDirectories:
+        - ../../../../generated/code
+        - ../../../../dev/tests/integration/framework
+    bootstrapFiles:
+        - ../../../../dev/tests/unit/framework/bootstrap.php

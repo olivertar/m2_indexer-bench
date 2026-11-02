@@ -1,0 +1,95 @@
+<?php
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Orangecat\IndexerBench\ViewModel\RunDetail;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var RunDetail $viewModel */
+$viewModel = $block->getData('view_model');
+$run = $viewModel->getRun();
+$backUrl = $block->getUrl('indexerbench/run/index');
+?>
+<p><a href="<?= $escaper->escapeUrl($backUrl) ?>">&larr; <?= $escaper->escapeHtml(__('All benchmark runs')) ?></a></p>
+
+<?php if ($run === null): ?>
+    <div class="message message-error">
+        <div><?= $escaper->escapeHtml(__('Benchmark run not found in this database.')) ?></div>
+    </div>
+<?php else: ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title">
+                <?= $escaper->escapeHtml(__('Run #%1', $run['run_id'])) ?> ·
+                <code><?= $escaper->escapeHtml($run['indexer_id']) ?></code> ·
+                <code><?= $escaper->escapeHtml($run['label']) ?></code>
+            </strong>
+        </div>
+        <p>
+            <a class="action-default" href="<?= $escaper->escapeUrl($run['export_url']) ?>">
+                <?= $escaper->escapeHtml(__('Download Markdown report')) ?>
+            </a>
+            <a href="<?= $escaper->escapeUrl($run['compare_url']) ?>">
+                <?= $escaper->escapeHtml(__('Compare this label')) ?>
+            </a>
+        </p>
+        <table class="data-grid">
+            <tbody>
+            <tr><th><?= $escaper->escapeHtml(__('Started (UTC)')) ?></th>
+                <td><?= $escaper->escapeHtml($run['started_at']) ?></td></tr>
+            <tr><th><?= $escaper->escapeHtml(__('Mode')) ?></th><td><?= $escaper->escapeHtml($run['mode']) ?></td></tr>
+            <tr><th><?= $escaper->escapeHtml(__('Kind')) ?></th><td><?= $escaper->escapeHtml($run['kind']) ?></td></tr>
+            <tr><th><?= $escaper->escapeHtml(__('Repeat')) ?></th><td><?= (int)$run['repeat'] ?></td></tr>
+            <tr><th><?= $escaper->escapeHtml(__('Status')) ?></th>
+                <td><?= $escaper->escapeHtml($run['status']) ?></td></tr>
+            <?php if ($run['error'] !== null): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Error')) ?></th>
+                    <td><code><?= $escaper->escapeHtml($run['error']) ?></code></td></tr>
+            <?php endif; ?>
+            <?php if ($run['notes'] !== null && $run['notes'] !== ''): ?>
+                <tr><th><?= $escaper->escapeHtml(__('Notes')) ?></th>
+                    <td><?= $escaper->escapeHtml($run['notes']) ?></td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><?= $escaper->escapeHtml(__('Metrics')) ?></strong>
+        </div>
+        <table class="data-grid">
+            <thead>
+            <tr>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Metric')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Value')) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($run['metrics'] as $metric): ?>
+                <tr>
+                    <td><code><?= $escaper->escapeHtml($metric['code']) ?></code></td>
+                    <td><?= $escaper->escapeHtml($metric['value']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
+
+    <?php if ($run['environment']): ?>
+        <section class="admin__page-section">
+            <div class="admin__page-section-title">
+                <strong class="title"><?= $escaper->escapeHtml(__('Environment')) ?></strong>
+            </div>
+            <ul>
+                <?php foreach ($run['environment'] as $line): ?>
+                    <li><?= $escaper->escapeHtml($line) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+    <?php endif; ?>
+<?php endif; ?>

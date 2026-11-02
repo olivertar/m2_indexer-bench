@@ -1,0 +1,100 @@
+<?php
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Orangecat\IndexerBench\ViewModel\BenchmarkOverview;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var BenchmarkOverview $viewModel */
+$viewModel = $block->getData('view_model');
+$sections = $viewModel->getSections();
+?>
+<div class="message message-notice">
+    <div><?= $escaper->escapeHtml(__(
+        'Read-only page: benchmark runs stored in this installation\'s database. Runs are started from the command '
+        . 'line on development or staging, e.g. bin/magento indexer-bench:run -i catalog_product_price -l core.'
+    )) ?></div>
+</div>
+
+<?php if (!$sections): ?>
+    <div class="message message-info">
+        <div><?= $escaper->escapeHtml(__(
+            'No benchmark runs in this database. Runs are stored in the database the command ran against: runs '
+            . 'made with bin/bench-magento on a copy of the database are in that copy.'
+        )) ?></div>
+    </div>
+<?php endif; ?>
+
+<?php foreach ($sections as $section): ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><code><?= $escaper->escapeHtml($section['indexer_id']) ?></code></strong>
+        </div>
+        <p>
+            <?= $escaper->escapeHtml(__(
+                '%1 runs, last started %2 UTC.',
+                $section['runs'],
+                $section['last_started_at']
+            )) ?>
+            <a href="<?= $escaper->escapeUrl($section['compare_url']) ?>"><?= $escaper->escapeHtml(__('Compare')) ?></a>
+        </p>
+
+        <h3><?= $escaper->escapeHtml(__('Labels (%1, comparable runs)', BenchmarkOverview::METRIC)) ?></h3>
+        <table class="data-grid">
+            <thead>
+            <tr>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Label')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Runs')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Median')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Min')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Max')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Trend')) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($section['labels'] as $label): ?>
+                <tr>
+                    <td><code><?= $escaper->escapeHtml($label['label']) ?></code></td>
+                    <td><?= (int)$label['runs'] ?></td>
+                    <td><?= $escaper->escapeHtml($label['median']) ?></td>
+                    <td><?= $escaper->escapeHtml($label['min']) ?></td>
+                    <td><?= $escaper->escapeHtml($label['max']) ?></td>
+                    <td><?= $escaper->escapeHtml($label['trend']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <h3><?= $escaper->escapeHtml(__('Last runs')) ?></h3>
+        <table class="data-grid">
+            <thead>
+            <tr>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Run')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Started (UTC)')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Label')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Mode')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Kind')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Status')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(BenchmarkOverview::METRIC) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($section['recent'] as $run): ?>
+                <tr>
+                    <td><a href="<?= $escaper->escapeUrl($run['url']) ?>">#<?= (int)$run['run_id'] ?></a></td>
+                    <td><?= $escaper->escapeHtml($run['started_at']) ?></td>
+                    <td><code><?= $escaper->escapeHtml($run['label']) ?></code></td>
+                    <td><?= $escaper->escapeHtml($run['mode']) ?></td>
+                    <td><?= $escaper->escapeHtml($run['kind']) ?></td>
+                    <td><?= $escaper->escapeHtml($run['status']) ?></td>
+                    <td><?= $escaper->escapeHtml($run['wall_time_s']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
+<?php endforeach; ?>

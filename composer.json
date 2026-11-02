@@ -1,0 +1,30 @@
+{
+    "name": "orangecat/module-indexer-bench",
+    "description": "Reproducible indexer benchmark with history and canonical output verification (development and staging only)",
+    "type": "magento2-module",
+    "license": "MIT",
+    "require": {
+        "php": "~8.2.0||~8.3.0||~8.4.0||~8.5.0",
+        "magento/framework": "*",
+        "magento/module-backend": "*",
+        "magento/module-catalog": "*",
+        "magento/module-catalog-inventory": "*",
+        "magento/module-catalog-rule": "*",
+        "magento/module-cron": "*",
+        "magento/module-indexer": "*",
+        "magento/module-store": "*",
+        "orangecat/module-indexer-boost": "^0.4"
+    },
+    "suggest": {
+        "mage-os/module-profiler": "Machine-readable profiles for indexer-bench:run --profile",
+        "magento/module-inventory-indexer": "Benchmark of the MSI inventory indexer"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Orangecat\\IndexerBench\\": ""
+        }
+    }
+}

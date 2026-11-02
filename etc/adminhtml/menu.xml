@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Orangecat_IndexerBench::view" title="Indexer Benchmarks" translate="title" module="Orangecat_IndexerBench" sortOrder="91" parent="Magento_Backend::system_tools" action="indexerbench/run/index" resource="Orangecat_IndexerBench::view"/>
+    </menu>
+</config>

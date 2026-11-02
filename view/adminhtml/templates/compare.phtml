@@ -1,0 +1,184 @@
+<?php
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+
+use Magento\Backend\Block\Template;
+use Magento\Framework\Escaper;
+use Orangecat\IndexerBench\ViewModel\CompareView;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var CompareView $viewModel */
+$viewModel = $block->getData('view_model');
+$form = $viewModel->getForm();
+$result = $viewModel->getResult();
+$verdicts = [
+    'improved' => 'grid-severity-notice',
+    'regression' => 'grid-severity-critical',
+    'changed' => 'grid-severity-major',
+];
+?>
+<p>
+    <a href="<?= $escaper->escapeUrl($block->getUrl('indexerbench/run/index')) ?>">&larr;
+        <?= $escaper->escapeHtml(__('All benchmark runs')) ?></a>
+</p>
+
+<?php if (!$form['indexers']): ?>
+    <div class="message message-info">
+        <div><?= $escaper->escapeHtml(__('No benchmark runs in this database.')) ?></div>
+    </div>
+<?php else: ?>
+    <form method="get" action="<?= $escaper->escapeUrl($form['action_url']) ?>" class="admin__fieldset">
+        <datalist id="indexerbench-labels">
+            <?php foreach ($form['labels'] as $label): ?>
+                <option value="<?= $escaper->escapeHtmlAttr($label) ?>"></option>
+            <?php endforeach; ?>
+        </datalist>
+        <div class="admin__field">
+            <label class="admin__field-label" for="indexerbench-indexer">
+                <span><?= $escaper->escapeHtml(__('Indexer')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <select id="indexerbench-indexer" name="indexer" class="admin__control-select">
+                    <?php foreach ($form['indexers'] as $indexerId): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($indexerId) ?>"
+                            <?= $indexerId === $form['indexer'] ? 'selected' : '' ?>>
+                            <?= $escaper->escapeHtml($indexerId) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="admin__field">
+            <label class="admin__field-label" for="indexerbench-baseline">
+                <span><?= $escaper->escapeHtml(__('Baseline (label or run ID)')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <input id="indexerbench-baseline" name="baseline" list="indexerbench-labels"
+                       class="admin__control-text" value="<?= $escaper->escapeHtmlAttr($form['baseline']) ?>">
+            </div>
+        </div>
+        <div class="admin__field">
+            <label class="admin__field-label" for="indexerbench-candidate">
+                <span><?= $escaper->escapeHtml(__('Candidate (label or run ID)')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <input id="indexerbench-candidate" name="candidate" list="indexerbench-labels"
+                       class="admin__control-text" value="<?= $escaper->escapeHtmlAttr($form['candidate']) ?>">
+            </div>
+        </div>
+        <div class="admin__field">
+            <label class="admin__field-label" for="indexerbench-threshold">
+                <span><?= $escaper->escapeHtml(__('Threshold (%)')) ?></span>
+            </label>
+            <div class="admin__field-control">
+                <input id="indexerbench-threshold" name="threshold" type="number" min="0" step="0.1"
+                       class="admin__control-text" value="<?= $escaper->escapeHtmlAttr($form['threshold']) ?>">
+            </div>
+        </div>
+        <div class="admin__field">
+            <div class="admin__field-control">
+                <button type="submit" class="action-primary">
+                    <span><?= $escaper->escapeHtml(__('Compare')) ?></span>
+                </button>
+            </div>
+        </div>
+    </form>
+<?php endif; ?>
+
+<?php if ($result !== null && isset($result['error'])): ?>
+    <div class="message message-error"><div><?= $escaper->escapeHtml($result['error']) ?></div></div>
+<?php elseif ($result !== null): ?>
+    <section class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><?= $escaper->escapeHtml(__(
+                'Baseline: %1 · Candidate: %2',
+                $result['baseline'],
+                $result['candidate']
+            )) ?></strong>
+        </div>
+        <?php if ($result['fingerprint_differences']): ?>
+            <div class="message message-warning">
+                <div><?= $escaper->escapeHtml(__('The environments differ:')) ?>
+                    <?= $escaper->escapeHtml(implode('; ', $result['fingerprint_differences'])) ?></div>
+            </div>
+        <?php else: ?>
+            <p><?= $escaper->escapeHtml(__('Fingerprint: OK (same catalog, database variables and versions)')) ?></p>
+        <?php endif; ?>
+        <?php if ($result['work_warning'] !== null): ?>
+            <div class="message message-warning"><div><?= $escaper->escapeHtml($result['work_warning']) ?></div></div>
+        <?php endif; ?>
+
+        <table class="data-grid">
+            <thead>
+            <tr>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Metric')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Baseline')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Candidate')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Δ')) ?></th>
+                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Verdict')) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($result['metrics'] as $metric): ?>
+                <tr>
+                    <td><code><?= $escaper->escapeHtml($metric['code']) ?></code></td>
+                    <td><?= $escaper->escapeHtml($metric['baseline']) ?></td>
+                    <td><?= $escaper->escapeHtml($metric['candidate']) ?></td>
+                    <td><?= $escaper->escapeHtml($metric['delta']) ?></td>
+                    <td>
+                        <?php if (isset($verdicts[$metric['verdict']])): ?>
+                            <span class="<?= $escaper->escapeHtmlAttr($verdicts[$metric['verdict']]) ?>">
+                                <span><?= $escaper->escapeHtml($metric['verdict']) ?></span></span>
+                        <?php else: ?>
+                            <?= $escaper->escapeHtml($metric['verdict']) ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <p>
+            <strong><?= $escaper->escapeHtml(__('Output:')) ?></strong>
+            <?= $escaper->escapeHtml($result['output']) ?>
+            <?php if ($result['output_rows'] !== null): ?>
+                <?= $escaper->escapeHtml(__('(%1 rows)', $result['output_rows'])) ?>
+            <?php endif; ?>
+            <?php if ($result['output_note'] !== null): ?>
+                — <?= $escaper->escapeHtml($result['output_note']) ?>
+            <?php endif; ?>
+        </p>
+        <?php if ($result['differing_tables']): ?>
+            <table class="data-grid">
+                <thead>
+                <tr>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Differing table')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Baseline rows')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Candidate rows')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Note')) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($result['differing_tables'] as $table): ?>
+                    <tr>
+                        <td><code><?= $escaper->escapeHtml($table['table']) ?></code></td>
+                        <td><?= $escaper->escapeHtml((string)$table['baseline_rows']) ?></td>
+                        <td><?= $escaper->escapeHtml((string)$table['candidate_rows']) ?></td>
+                        <td><?= $escaper->escapeHtml((string)$table['note']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <p><?= $escaper->escapeHtml(__(
+                'Differing rows: bin/magento indexer-bench:snapshot -i %1 -l <candidate> --diff=<baseline>',
+                $form['indexer']
+            )) ?></p>
+        <?php endif; ?>
+        <p>
+            <?= $escaper->escapeHtml($result['regressions']
+                ? __('Regressions over %1%: %2', $result['threshold'], implode(', ', $result['regressions']))
+                : __('No regression over %1%', $result['threshold'])) ?>
+        </p>
+    </section>
+<?php endif; ?>

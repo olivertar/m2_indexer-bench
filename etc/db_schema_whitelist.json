@@ -1,0 +1,59 @@
+{
+    "orangecat_indexer_bench_run": {
+        "column": {
+            "run_id": true,
+            "indexer_id": true,
+            "label": true,
+            "mode": true,
+            "kind": true,
+            "sample_size": true,
+            "seed": true,
+            "repeat_index": true,
+            "warmup": true,
+            "profiled": true,
+            "started_at": true,
+            "finished_at": true,
+            "status": true,
+            "error": true,
+            "fingerprint": true,
+            "notes": true
+        },
+        "index": {
+            "ORANGECAT_INDEXER_BENCH_RUN_INDEXER_ID_LABEL": true,
+            "ORANGECAT_INDEXER_BENCH_RUN_INDEXER_ID_STARTED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "orangecat_indexer_bench_metric": {
+        "column": {
+            "run_id": true,
+            "metric_code": true,
+            "value": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ORANGECAT_INDEXER_BENCH_METRIC_RUN_ID_ORANGECAT_INDEXER_BENCH_RUN_RUN_ID": true,
+            "FK_6E04C57C97B933CC640A709369745C08": true
+        }
+    },
+    "orangecat_indexer_bench_snapshot": {
+        "column": {
+            "snapshot_id": true,
+            "indexer_id": true,
+            "label": true,
+            "table_name": true,
+            "row_count": true,
+            "md5": true,
+            "file_path": true,
+            "created_at": true
+        },
+        "index": {
+            "ORANGECAT_INDEXER_BENCH_SNAPSHOT_INDEXER_ID_LABEL": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    }
+}

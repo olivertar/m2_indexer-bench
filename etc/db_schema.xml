@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="orangecat_indexer_bench_run" resource="default" engine="innodb"
+           comment="Indexer Bench runs">
+        <column xsi:type="int" name="run_id" unsigned="true" nullable="false" identity="true" comment="Run ID"/>
+        <column xsi:type="varchar" name="indexer_id" nullable="false" length="255" comment="Indexer ID"/>
+        <column xsi:type="varchar" name="label" nullable="false" length="255" comment="Label grouping repeats"/>
+        <column xsi:type="varchar" name="mode" nullable="false" length="16" comment="baseline or candidate"/>
+        <column xsi:type="varchar" name="kind" nullable="false" length="16" comment="full or partial"/>
+        <column xsi:type="int" name="sample_size" unsigned="true" nullable="true" comment="Partial: number of IDs"/>
+        <column xsi:type="int" name="seed" nullable="true" comment="Partial: sampling seed"/>
+        <column xsi:type="smallint" name="repeat_index" unsigned="true" nullable="false" default="0"
+                comment="Position in the series of repeats, from 0"/>
+        <column xsi:type="smallint" name="warmup" unsigned="true" nullable="false" default="0"
+                comment="Warm-up repeat, left out of medians"/>
+        <column xsi:type="smallint" name="profiled" unsigned="true" nullable="false" default="0"
+                comment="Run with the profiler, left out of comparisons"/>
+        <column xsi:type="datetime" name="started_at" nullable="false" comment="Start (UTC)"/>
+        <column xsi:type="datetime" name="finished_at" nullable="true" comment="End (UTC)"/>
+        <column xsi:type="varchar" name="status" nullable="false" length="16" comment="ok or failed"/>
+        <column xsi:type="text" name="error" nullable="true" comment="Error of a failed run"/>
+        <column xsi:type="mediumtext" name="fingerprint" nullable="true" comment="Environment fingerprint (JSON)"/>
+        <column xsi:type="text" name="notes" nullable="true" comment="Operator notes"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="run_id"/>
+        </constraint>
+        <index referenceId="ORANGECAT_INDEXER_BENCH_RUN_INDEXER_ID_LABEL" indexType="btree">
+            <column name="indexer_id"/>
+            <column name="label"/>
+        </index>
+        <index referenceId="ORANGECAT_INDEXER_BENCH_RUN_INDEXER_ID_STARTED_AT" indexType="btree">
+            <column name="indexer_id"/>
+            <column name="started_at"/>
+        </index>
+    </table>
+    <table name="orangecat_indexer_bench_metric" resource="default" engine="innodb"
+           comment="Indexer Bench metrics per run">
+        <column xsi:type="int" name="run_id" unsigned="true" nullable="false" comment="Run ID"/>
+        <column xsi:type="varchar" name="metric_code" nullable="false" length="64" comment="Metric code"/>
+        <column xsi:type="decimal" name="value" scale="6" precision="20" nullable="true"
+                comment="Value; NULL when not available (n/a)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="run_id"/>
+            <column name="metric_code"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ORANGECAT_INDEXER_BENCH_METRIC_RUN_ID_ORANGECAT_INDEXER_BENCH_RUN_RUN_ID"
+                    table="orangecat_indexer_bench_metric" column="run_id"
+                    referenceTable="orangecat_indexer_bench_run" referenceColumn="run_id" onDelete="CASCADE"/>
+    </table>
+    <table name="orangecat_indexer_bench_snapshot" resource="default" engine="innodb"
+           comment="Indexer Bench canonical snapshots per table">
+        <column xsi:type="int" name="snapshot_id" unsigned="true" nullable="false" identity="true"
+                comment="Snapshot ID"/>
+        <column xsi:type="varchar" name="indexer_id" nullable="false" length="255" comment="Indexer ID"/>
+        <column xsi:type="varchar" name="label" nullable="false" length="255" comment="Snapshot label"/>
+        <column xsi:type="varchar" name="table_name" nullable="false" length="255"
+                comment="Index table, or * for the global checksum"/>
+        <column xsi:type="bigint" name="row_count" unsigned="true" nullable="false" default="0" comment="Rows"/>
+        <column xsi:type="varchar" name="md5" nullable="false" length="32" comment="MD5 of the canonical dump"/>
+        <column xsi:type="varchar" name="file_path" nullable="true" length="1024"
+                comment="Dump file relative to var/"/>
+        <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"
+                comment="Creation time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="snapshot_id"/>
+        </constraint>
+        <index referenceId="ORANGECAT_INDEXER_BENCH_SNAPSHOT_INDEXER_ID_LABEL" indexType="btree">
+            <column name="indexer_id"/>
+            <column name="label"/>
+        </index>
+    </table>
+</schema>

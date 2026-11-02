@@ -1,0 +1,28 @@
+#!/bin/sh
+# bin/magento against a benchmark copy of the database, with its own cache.
+#
+# Usage, from the Magento root: app/code/Orangecat/IndexerBench/bin/bench-magento indexer-bench:run ...
+#
+# MAGENTO_DC__OVERRIDE replaces whole top-level sections of app/etc/env.php. The flat MAGENTO_DC_DB__... variables
+# do not work here: the connection is read as one array (db/connection/default), which they do not override.
+#
+#   BENCH_DB            database name                     (default magento_bench)
+#   BENCH_CACHE_PREFIX  cache id prefix                   (default bch_)
+#   BENCH_CACHE_DB      Redis/Valkey database of the default cache; the page cache uses the next one (default 2)
+set -e
+cd "$(dirname "$0")/../../../../.."
+OVERRIDE=$(BENCH_DB="${BENCH_DB:-magento_bench}" BENCH_CACHE_PREFIX="${BENCH_CACHE_PREFIX:-bch_}" \
+    BENCH_CACHE_DB="${BENCH_CACHE_DB:-2}" php -r '
+$env = include "app/etc/env.php";
+$env["db"]["connection"]["default"]["dbname"] = getenv("BENCH_DB");
+$database = (int)getenv("BENCH_CACHE_DB");
+foreach (["default" => $database, "page_cache" => $database + 1] as $frontend => $number) {
+    if (isset($env["cache"]["frontend"][$frontend])) {
+        $env["cache"]["frontend"][$frontend]["id_prefix"] = getenv("BENCH_CACHE_PREFIX");
+        if (isset($env["cache"]["frontend"][$frontend]["backend_options"]["database"])) {
+            $env["cache"]["frontend"][$frontend]["backend_options"]["database"] = (string)$number;
+        }
+    }
+}
+echo json_encode(["db" => $env["db"], "cache" => $env["cache"] ?? []]);')
+MAGENTO_DC__OVERRIDE="$OVERRIDE" exec php bin/magento "$@"

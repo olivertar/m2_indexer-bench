@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Orangecat. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="indexer_bench_run" xsi:type="object">Orangecat\IndexerBench\Console\Command\RunCommand</item>
+                <item name="indexer_bench_run_partial" xsi:type="object">Orangecat\IndexerBench\Console\Command\RunPartialCommand</item>
+                <item name="indexer_bench_snapshot" xsi:type="object">Orangecat\IndexerBench\Console\Command\SnapshotCommand</item>
+                <item name="indexer_bench_compare" xsi:type="object">Orangecat\IndexerBench\Console\Command\CompareCommand</item>
+                <item name="indexer_bench_history" xsi:type="object">Orangecat\IndexerBench\Console\Command\HistoryCommand</item>
+                <item name="indexer_bench_export" xsi:type="object">Orangecat\IndexerBench\Console\Command\ExportCommand</item>
+            </argument>
+        </arguments>
+    </type>
+    <!-- Every bin/magento call builds the command list: defer the database work to the command itself -->
+    <type name="Orangecat\IndexerBench\Console\Command\AbstractSeriesCommand">
+        <arguments>
+            <argument name="safeguards" xsi:type="object">Orangecat\IndexerBench\Model\Safeguard\Safeguards\Proxy</argument>
+            <argument name="runner" xsi:type="object">Orangecat\IndexerBench\Model\Run\SeriesRunner\Proxy</argument>
+            <argument name="adapterPool" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\AdapterPool\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Orangecat\IndexerBench\Console\Command\SnapshotCommand">
+        <arguments>
+            <argument name="productionGuard" xsi:type="object">Orangecat\IndexerBench\Model\Safeguard\ProductionGuard\Proxy</argument>
+            <argument name="taker" xsi:type="object">Orangecat\IndexerBench\Model\Snapshot\SnapshotTaker\Proxy</argument>
+            <argument name="comparer" xsi:type="object">Orangecat\IndexerBench\Model\Snapshot\SnapshotComparer\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Orangecat\IndexerBench\Console\Command\HistoryCommand">
+        <arguments>
+            <argument name="historyBuilder" xsi:type="object">Orangecat\IndexerBench\Model\History\HistoryBuilder\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Orangecat\IndexerBench\Console\Command\ExportCommand">
+        <arguments>
+            <argument name="runReader" xsi:type="object">Orangecat\IndexerBench\Model\Run\RunReader\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Orangecat\IndexerBench\Console\Command\CompareCommand">
+        <arguments>
+            <argument name="selector" xsi:type="object">Orangecat\IndexerBench\Model\Compare\RunSelector\Proxy</argument>
+            <argument name="snapshotComparer" xsi:type="object">Orangecat\IndexerBench\Model\Snapshot\SnapshotComparer\Proxy</argument>
+        </arguments>
+    </type>
+    <!-- Counts statements only while MetricCollector measures; otherwise one boolean check per statement -->
+    <type name="Magento\Framework\DB\Adapter\Pdo\Mysql">
+        <plugin name="orangecat_indexer_bench_query_counter" type="Orangecat\IndexerBench\Plugin\Db\QueryCounterPlugin"/>
+    </type>
+    <type name="Orangecat\IndexerBench\Model\Collector\MetricCollector">
+        <arguments>
+            <!-- Statements at least this long count as slow_queries -->
+            <argument name="slowQuerySeconds" xsi:type="number">1</argument>
+        </arguments>
+    </type>
+    <type name="Orangecat\IndexerBench\Model\Adapter\AdapterPool">
+        <arguments>
+            <argument name="adapters" xsi:type="array">
+                <item name="catalog_category_product" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\CategoryProductAdapter</item>
+                <item name="catalog_product_price" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\PriceAdapter</item>
+                <item name="catalogrule_rule" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\CatalogRuleRuleAdapter</item>
+                <item name="catalogrule_product" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\CatalogRuleProductAdapter</item>
+                <item name="catalog_product_attribute" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\ProductAttributeAdapter</item>
+                <item name="cataloginventory_stock" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\StockAdapter</item>
+                <item name="inventory" xsi:type="object">Orangecat\IndexerBench\Model\Adapter\InventoryAdapter</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- catalogrule_rule and catalogrule_product share their index (shared_index="catalogrule") -->
+    <virtualType name="Orangecat\IndexerBench\Model\Adapter\CatalogRuleRuleAdapter" type="Orangecat\IndexerBench\Model\Adapter\TableAdapter">
+        <arguments>
+            <argument name="indexerId" xsi:type="string">catalogrule_rule</argument>
+            <argument name="tables" xsi:type="array">
+                <item name="catalogrule_product" xsi:type="array">
+                    <item name="0" xsi:type="string">rule_id</item>
+                    <item name="1" xsi:type="string">from_time</item>
+                    <item name="2" xsi:type="string">to_time</item>
+                    <item name="3" xsi:type="string">website_id</item>
+                    <item name="4" xsi:type="string">customer_group_id</item>
+                    <item name="5" xsi:type="string">product_id</item>
+                    <item name="6" xsi:type="string">sort_order</item>
+                </item>
+                <item name="catalogrule_product_price" xsi:type="array">
+                    <item name="0" xsi:type="string">rule_date</item>
+                    <item name="1" xsi:type="string">website_id</item>
+                    <item name="2" xsi:type="string">customer_group_id</item>
+                    <item name="3" xsi:type="string">product_id</item>
+                </item>
+                <item name="catalogrule_group_website" xsi:type="array">
+                    <item name="0" xsi:type="string">rule_id</item>
+                    <item name="1" xsi:type="string">customer_group_id</item>
+                    <item name="2" xsi:type="string">website_id</item>
+                </item>
+            </argument>
+            <argument name="partialIndexerId" xsi:type="string">catalogrule_product</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Orangecat\IndexerBench\Model\Adapter\CatalogRuleProductAdapter" type="Orangecat\IndexerBench\Model\Adapter\CatalogRuleRuleAdapter">
+        <arguments>
+            <argument name="indexerId" xsi:type="string">catalogrule_product</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Orangecat\IndexerBench\Model\Adapter\ProductAttributeAdapter" type="Orangecat\IndexerBench\Model\Adapter\TableAdapter">
+        <arguments>
+            <argument name="indexerId" xsi:type="string">catalog_product_attribute</argument>
+            <argument name="tables" xsi:type="array">
+                <item name="catalog_product_index_eav" xsi:type="array">
+                    <item name="0" xsi:type="string">entity_id</item>
+                    <item name="1" xsi:type="string">attribute_id</item>
+                    <item name="2" xsi:type="string">store_id</item>
+                    <item name="3" xsi:type="string">value</item>
+                    <item name="4" xsi:type="string">source_id</item>
+                </item>
+                <item name="catalog_product_index_eav_decimal" xsi:type="array">
+                    <item name="0" xsi:type="string">entity_id</item>
+                    <item name="1" xsi:type="string">attribute_id</item>
+                    <item name="2" xsi:type="string">store_id</item>
+                    <item name="3" xsi:type="string">value</item>
+                    <item name="4" xsi:type="string">source_id</item>
+                </item>
+            </argument>
+            <argument name="partialIndexerId" xsi:type="string">catalog_product_attribute</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Orangecat\IndexerBench\Model\Adapter\StockAdapter" type="Orangecat\IndexerBench\Model\Adapter\TableAdapter">
+        <arguments>
+            <argument name="indexerId" xsi:type="string">cataloginventory_stock</argument>
+            <argument name="tables" xsi:type="array">
+                <item name="cataloginventory_stock_status" xsi:type="array">
+                    <item name="0" xsi:type="string">product_id</item>
+                    <item name="1" xsi:type="string">website_id</item>
+                    <item name="2" xsi:type="string">stock_id</item>
+                </item>
+            </argument>
+            <argument name="partialIndexerId" xsi:type="string">cataloginventory_stock</argument>
+        </arguments>
+    </virtualType>
+</config>
