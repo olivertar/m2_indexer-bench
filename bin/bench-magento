@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright © Orangecat
+# SPDX-License-Identifier: MIT
 # bin/magento against a benchmark copy of the database, with its own cache.
 #
 # Usage, from the Magento root: app/code/Orangecat/IndexerBench/bin/bench-magento indexer-bench:run ...
